@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f5;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 500px;
+            background-color: white;
+            padding: 2rem;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 0.25rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            margin-top: 2rem;
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #3498db;
+            color: white;
+            font-size: 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Login</h1>
+        <form method="POST">
+            <label for="name">First Name:</label>
+            <input type="text" name="name" id="name" required>
+
+            <label for="family">Family Name:</label>
+            <input type="text" name="family" id="family" required>
+
+            <label for="student_id">Student ID:</label>
+            <input type="text" name="student_id" id="student_id" required>
+
+            <button type="submit">Continue</button>
+        </form>
+    </div>
+</body>
+</html>
