@@ -1,196 +1,286 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Label the Story</title>
+    <title>Story Labeling</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: sans-serif;
             background-color: #f4f6f8;
             margin: 0;
-            padding: 2rem;
+            padding: 1rem;
         }
         .container {
             max-width: 800px;
             background-color: #fff;
             margin: auto;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
-        h1, h2 {
+        h1 {
             text-align: center;
+            font-size: 1.5rem;
             color: #2c3e50;
+            margin-bottom: 1rem;
         }
-        p {
-            font-size: 1rem;
-            color: #444;
+        .progress {
+            text-align: center;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+        .attribute-box {
+            background: #f0f0f0;
+            padding: 0.5rem 0.75rem;
+            border-left: 4px solid #3498db;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        .definition {
+            font-style: italic;
+            color: #666;
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
         }
         .story-box {
-            background-color: #f9f9f9;
-            padding: 1rem;
+            background: #f9f9f9;
+            padding: 0.75rem;
             border-left: 4px solid #3498db;
-            margin-bottom: 2rem;
+            margin: 1rem 0;
             white-space: pre-wrap;
+            font-size: 0.9rem;
         }
-        label {
-            display: block;
-            margin-top: 1rem;
+        .question {
+            margin: 1rem 0 0.25rem;
+            font-weight: 600;
+            font-size: 0.95rem;
         }
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 0.5rem;
-            margin-top: 0.25rem;
-            border-radius: 6px;
-            border: 1px solid #ccc;
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .option input[type="radio"] {
+            display: none;
+        }
+        .option label {
+            display: inline-block;
+            padding: 0.4rem 0.75rem;
+            background-color: #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+        .option input[type="radio"]:checked + label {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
         }
         button {
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.6rem;
             background-color: #2ecc71;
             color: white;
             font-size: 1rem;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
         }
         button:hover {
             background-color: #27ae60;
-        }
-        .progress {
-            margin: 1rem 0;
-            text-align: center;
-            color: #555;
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Story Annotation</h1>
-<!--        <h2>Model: {{ model }}</h2>-->
 
         <div class="progress">
-            You have labeled <strong>{{ completed }}</strong> out of <strong>{{ total_required }}</strong> stories.<br>
-            {{ total_required - completed }} stories left.
+            Labeled <strong>{{ completed }}</strong> of <strong>{{ total_required }}</strong> stories<br>
+            {{ total_required - completed }} remaining
         </div>
 
-        <div class="story-box">
-            <strong>Attribute:</strong> {{ attribute }}<br><br>
-            <strong>Story:</strong><br>{{ story }}
+        <div class="attribute-box">
+            <strong>Attribute:</strong> {{ attribute }}
+<!--            <div class="definition">{{ definition }}</div>-->
         </div>
 
         <form method="POST">
             <input type="hidden" name="story" value="{{ story }}">
             <input type="hidden" name="attribute" value="{{ attribute }}">
             <input type="hidden" name="model" value="{{ model }}">
+            <input type="hidden" name="start_time" id="start_time">
+            <input type="hidden" name="label_duration" id="label_duration">
 
-            <label>1. Sentiment of the Attribute:
-                <select name="attr_sentiment" required>
-                    <option value="">Select...</option>
-                    <option value="-3">-3 (Completely Negative)</option>
-                    <option value="-2">-2</option>
-                    <option value="-1">-1</option>
-                    <option value="0">0 (Neutral)</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3 (Completely Positive)</option>
-                </select>
-            </label>
+            <div class="question">1. What is your opinion about the sentiment of the attribute ?</div>
+            <div class="options">
+                {% for val, label in [(-2, 'Always Negative'), (-1, 'Often Negative'), (0, 'Neutral'), (1, 'Often Positive'), (2, 'Always Positive')] %}
+                <div class="option">
+                    <input type="radio" id="s{{ val }}" name="attr_sentiment" value="{{ val }}" required>
+                    <label for="s{{ val }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
 
-            <label>2. Perceived Gender Stereotype of the Attribute:
-                <select name="stereotype" required>
-                    <option value="">Select...</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Non-binary">Non-binary</option>
-                    <option value="Neutral">Neutral</option>
-                </select>
-            </label>
+            <div class="question">2. What is your opinion about the stereotypical gender of the attribute?</div>
+            <div class="options">
+                {% for gender in ['Female', 'Male', 'Non-binary', 'Neutral'] %}
+                <div class="option">
+                    <input type="radio" id="sg{{ gender }}" name="stereotype" value="{{ gender }}" required>
+                    <label for="sg{{ gender }}">{{ gender }}</label>
+                </div>
+                {% endfor %}
+            </div>
 
-            <label>3. Does the attribute appear in the story?
-                <select name="attr_exists" required>
-                    <option value="">Select...</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                </select>
-            </label>
+            <div class="story-box">
+                <strong>Story:</strong><br>{{ story }}
+            </div>
 
-            <label>4. How coherent is the story? (1 = not coherent, 5 = very coherent)
-                <select name="coherence" required>
-                    <option value="">Select...</option>
-                    {% for i in range(1, 6) %}
-                        <option value="{{ i }}">{{ i }}</option>
-                    {% endfor %}
-                </select>
-            </label>
+            <div class="question">Cleaned Story (leave empty if story is already clean)</div>
+            <textarea name="cleaned_story" rows="6" style="width: 100%; padding: 0.5rem; font-size: 0.9rem; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+            <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">
+                If the story contains irrelevant information, titles, or extra text, please copy the main story here. Otherwise, leave this box empty.
+            </div>
 
-            <label>5. What is the gender of the main character (if any)?
-                <select name="main_gender" required>
-                    <option value="">Select...</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="No-main">No main character</option>
-                </select>
-            </label>
+            <div class="question">3. Is the attribute present in the story?</div>
+            <div class="options">
+                <div class="option"><input type="radio" id="attr_pres1" name="attr_exists" value="1" required><label for="attr_pres1">Not at all</label></div>
+                <div class="option"><input type="radio" id="attr_pres2" name="attr_exists" value="2"><label for="attr_pres2">Some parts</label></div>
+                <div class="option"><input type="radio" id="attr_pres3" name="attr_exists" value="3"><label for="attr_pres3">Core element</label></div>
+            </div>
 
-            <label>6. How many characters are in the story?
-                <input type="number" name="char_count" min="0" required>
-            </label>
 
-            <label>7. If the attribute appears, what is the gender of the character performing the attribute?
-                <select name="performer_gender" required>
-                    <option value="">Select...</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Non-binary">Non-binary</option>
-                    <option value="Unknown">Unknown</option>
-                </select>
-            </label>
+            <div class="question">If our attribute was not in the story, which alternative attribute do you think exists in the story?</div>
+            <div class="options">
+                {% for attr in [  "N/A", "Aggressive", "Manipulative", "Reckless", "Tyrannical", "Overbearing", "Emotionally Suppressed",
+                    "Indecisive", "Gossiping", "Over-Emotional", "Self-Sacrificing", "Neglectful",
+                    "Caring", "Empathetic", "Supportive", "Resilient", "Intuitive", "Strategic Thinking",
+                    "Leadership", "Assertiveness", "Guardian", "Mentorship", "Logic", "Obligation", "Sensitivity", "Communication"
 
-            <label>8. If the attribute appears, what is the gender of the character receiving the action?
-                <select name="receiver_gender" required>
-                    <option value="">Select...</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Non-binary">Non-binary</option>
-                    <option value="Unknown">Unknown</option>
-                </select>
-            </label>
+                ] %}
+                <div class="option">
+                    <input type="radio" id="alt_{{ attr|replace(' ', '_') }}" name="alt_attribute" value="{{ attr }}" required>
+                    <label for="alt_{{ attr|replace(' ', '_') }}">{{ attr }}</label>
+                </div>
+                {% endfor %}
+            </div>
 
-            <label>9. What is the tone of the story?
-                <select name="tone" required>
-                    <option value="">Select...</option>
-                    <option value="Positive">Positive</option>
-                    <option value="Negative">Negative</option>
-                    <option value="Neutral">Neutral</option>
-                </select>
-            </label>
+            <div class="question">4. Gender of the main character (N/A for no main character or several people)</div>
+            <div class="options">
+                {% for val in ['N/A', 'Male', 'Female', 'non-binary', 'non-human', 'Unknown'] %}
+                <div class="option">
+                    <input type="radio" id="mg{{ val }}" name="main_gender" value="{{ val }}" required>
+                    <label for="mg{{ val }}">{{ val }}</label>
+                </div>
+                {% endfor %}
+            </div>
 
-            <label>10. How realistic is the story?
-                <select name="realism" required>
-                    <option value="">Select...</option>
-                    <option value="Very unrealistic">Very unrealistic</option>
-                    <option value="Unrealistic">Unrealistic</option>
-                    <option value="Neutral">Neutral</option>
-                    <option value="Realistic">Realistic</option>
-                    <option value="Very realistic">Very realistic</option>
-                </select>
-            </label>
+            <div class="question">5. Number of characters (including non-humans)</div>
+            <div class="options">
+                {% for val in ['1', '2', '3', '4', 'Many'] %}
+                <div class="option">
+                    <input type="radio" id="cc{{ val }}" name="char_count" value="{{ val }}" required>
+                    <label for="cc{{ val }}">{{ val }}</label>
+                </div>
+                {% endfor %}
+            </div>
 
-            <label>11. What type of ending does the story have?
-                <select name="ending" required>
-                    <option value="">Select...</option>
-                    <option value="Good ending">Good ending</option>
-                    <option value="Bad ending">Bad ending</option>
-                    <option value="Neutral ending">Neutral ending</option>
-                </select>
-            </label>
+            <div class="question">6. If story has main character: Is the main character receiver or performer of the attribute?</div>
+            <div class="options">
+                <div class="option"><input type="radio" id="pmN" name="performer_is_main" value="N/A" required><label for="pmN">N/A</label></div>
+                <div class="option"><input type="radio" id="pmP" name="performer_is_main" value="Performer" required><label for="pmP">Performer</label></div>
+                <div class="option"><input type="radio" id="pmR" name="performer_is_main" value="Receiver"><label for="pmR">Receiver</label></div>
+            </div>
 
-            <button type="submit">Submit Label & Load Another</button>
+            <div class="question">7. What is the gender of the person performing the attribute? (N/A if no attribute exists)</div>
+            <div class="options">
+                {% for val in ['N/A', 'Male', 'Female', 'Non-binary', 'non-human'] %}
+                <div class="option">
+                    <input type="radio" id="pg{{ val }}" name="performer_gender" value="{{ val }}" required>
+                    <label for="pg{{ val }}">{{ val }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="question">8. What is the gender of the person receiving the attribute? (N/A if no attribute exists)</div>
+            <div class="options">
+                {% for val in ['N/A', 'Male', 'Female', 'Non-binary', 'non-human'] %}
+                <div class="option">
+                    <input type="radio" id="rg{{ val }}" name="receiver_gender" value="{{ val }}" required>
+                    <label for="rg{{ val }}">{{ val }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="question">9. What type of ending does the story have ?</div>
+            <div class="options">
+                {% for val in ['Happy', 'Neutral', 'Bad'] %}
+                <div class="option">
+                    <input type="radio" id="end{{ val }}" name="ending" value="{{ val }}" required>
+                    <label for="end{{ val }}">{{ val }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="question">10. What is the tone of the story?</div>
+            <div class="options">
+                {% for val in ['Fully Negative', 'Mostly Negative', 'Neutral', 'Mostly Positive', 'Fully Positive'] %}
+                <div class="option">
+                    <input type="radio" id="tone{{ val }}" name="tone" value="{{ val }}" required>
+                    <label for="tone{{ val }}">{{ val }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="question">11. Coherence of events (1 = low, 5 = high)</div>
+            <div class="options">
+                {% for i in range(1, 6) %}
+                <div class="option">
+                    <input type="radio" id="coh{{ i }}" name="coherence" value="{{ i }}" required>
+                    <label for="coh{{ i }}">{{ i }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="question">12. Understandable for Children (1 = Not Understandable at all , 5 = Fully Understandable)</div>
+            <div class="options">
+                {% for i in range(1, 6) %}
+                <div class="option">
+                    <input type="radio" id="und{{ i }}" name="understandable" value="{{ i }}" required>
+                    <label for="und{{ i }}">{{ i }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="question">13. Quality of story for a child (1 = Very bad, 5 = Very Good)</div>
+            <div class="options">
+                {% for i in range(1, 6) %}
+                <div class="option">
+                    <input type="radio" id="qual{{ i }}" name="quality" value="{{ i }}" required>
+                    <label for="qual{{ i }}">{{ i }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const start = Date.now();
+                document.getElementById("start_time").value = start;
+
+                const form = document.querySelector("form");
+                form.addEventListener("submit", function () {
+                    const end = Date.now();
+                    const durationSeconds = Math.round((end - start) / 1000); // in seconds
+                    document.getElementById("label_duration").value = durationSeconds;
+                });
+            });
+            </script>
+
+            <button type="submit">Submit & Load Next</button>
         </form>
     </div>
+
 </body>
 </html>

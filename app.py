@@ -4,6 +4,7 @@ import random
 import csv
 import os
 from urllib.parse import urlencode
+import json
 
 app = Flask(__name__)
 
@@ -66,10 +67,9 @@ def demographics():
         gender = request.form.get("gender", "")
         field = request.form.get("field", "")
 
-        if not consent:
-            return "Consent is required to participate.", 400
-        if not proficiency:
-            return "English proficiency is required.", 400
+        # if not consent:
+        #     return "Consent is required to participate.", 400
+
 
         # Save user info with demographics done as "yes"
         user = {
@@ -88,7 +88,6 @@ def demographics():
         return redirect(f"/label?{urlencode({'name': name, 'family': family, 'student_id': student_id})}")
 
     return render_template("demographics.html", name=name, family=family, student_id=student_id)
-
 
 @app.route("/label", methods=["GET", "POST"])
 def label():
@@ -132,14 +131,20 @@ def label():
             request.form["attr_sentiment"],
             request.form["stereotype"],
             request.form["attr_exists"],
-            request.form["coherence"],
+            request.form["alt_attribute"],
             request.form["main_gender"],
             request.form["char_count"],
+            request.form["performer_is_main"],
             request.form["performer_gender"],
             request.form["receiver_gender"],
+            request.form["ending"],
             request.form["tone"],
-            request.form["realism"],
-            request.form["ending"]
+            request.form["coherence"],
+            request.form["understandable"],
+            request.form["quality"],
+            request.form.get("cleaned_story", "").strip(),
+            request.form.get("start_time", ""),
+            request.form.get("label_duration", ""),
         ]
         file_exists = os.path.exists(LABELS_FILE)
         with open(LABELS_FILE, "a", newline="", encoding="utf-8") as f:
@@ -147,9 +152,9 @@ def label():
             if not file_exists:
                 writer.writerow([
                     "Name", "Family", "StudentID", "Age", "Gender", "EnglishProficiency", "FieldOfStudy", "Consent",
-                    "Model", "Story", "Attribute", "AttributeSentiment", "GenderStereotype", "AttrExists",
-                    "Coherence", "MainGender", "CharCount", "PerformerGender", "ReceiverGender",
-                    "Tone", "Realism", "Ending"
+                    "Model", "Story", "Attribute", "AttributeSentiment", "GenderStereotype", "AttrExists", "AltAttribute",
+                    "MainGender", "CharCount", "PerformerIsMain", "PerformerGender", "ReceiverGender",
+                    "Ending", "Tone", "Coherence", "ChildrenUnderstandable", "ChildQuality", "CleanedStory", "StartTime", "LabelDuration",
                 ])
             writer.writerow(row)
 
@@ -172,13 +177,20 @@ def label():
     attribute = sample["traits"]
     model = sample["Model"]
 
+    with open("data/attribute_definition.json", "r") as f:
+        attribute_definitions = json.load(f)
+
+    definition = attribute_definitions.get(attribute, "No definition available.")
+
     return render_template("label.html",
                            story=story,
                            attribute=attribute,
                            model=model,
                            user=user,
                            completed=completed,
-                           total_required=REQUIRED_LABELS)
+                           total_required=REQUIRED_LABELS,
+                           definition=definition,
+                           )
 
 if __name__ == "__main__":
     import os
