@@ -5,12 +5,18 @@ import csv
 import os
 from urllib.parse import urlencode
 import json
+from preprocess import*
 
 app = Flask(__name__)
 
-# Load the dataset to label
-df = pd.read_csv("data/unlabeled_one_attribute.csv")
+
+try:
+    df = pd.read_csv("data/unlabeled_one_attribute_processed.csv")
+except:
+    df = pd.read_csv("data/unlabeled_one_attribute.csv")
+    df = preprocess_dataset(df)
 df = df.dropna(subset=["story", "traits", "Model"])
+
 stories = df.to_dict(orient="records")
 
 REQUIRED_LABELS = 50
