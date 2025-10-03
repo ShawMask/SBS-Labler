@@ -6,6 +6,7 @@ import os
 from urllib.parse import urlencode
 import json
 from preprocess import*
+import time
 
 app = Flask(__name__)
 
@@ -23,6 +24,29 @@ REQUIRED_LABELS = 50
 
 USERS_FILE = "users.csv"
 LABELS_FILE = "labeled_data.csv"
+PARTICIPANTS_FILE = "participants.csv"
+AGG_LABELS_FILE = "labels_by_student.json"
+
+def load_labels_by_student():
+    if not os.path.exists(AGG_LABELS_FILE):
+        return {}
+    try:
+        with open(AGG_LABELS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_labels_by_student(data):  # NEW
+    with open(AGG_LABELS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def load_valid_ids():
+    if not os.path.exists(PARTICIPANTS_FILE):
+        return set()
+    df_part = pd.read_csv(PARTICIPANTS_FILE, dtype={"ID number": str})
+    return set(df_part["ID number"].astype(str).str.strip())
+
+VALID_IDS = load_valid_ids()
 
 def load_users():
     if not os.path.exists(USERS_FILE):
@@ -39,14 +63,19 @@ def save_user(user):
 def count_user_labels(student_id):
     if not os.path.exists(LABELS_FILE):
         return 0
-    df_labels = pd.read_csv(LABELS_FILE)
-    return len(df_labels[df_labels["StudentID"] == student_id])
+    df_labels = pd.read_csv(LABELS_FILE, dtype={"StudentID": str})
+    sid = str(student_id).strip()
+    return (df_labels["StudentID"].astype(str).str.strip() == sid).sum()
 @app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         name = request.form["name"].strip()
         family = request.form["family"].strip()
         student_id = request.form["student_id"].strip()
+
+        if student_id not in VALID_IDS:
+            error = 'Please make sure your ID is correct. Make sure it does not include the leading "K/AK/VK."'
+            return render_template("login.html", error=error)
 
         users = load_users()  # from users.csv
         user = users.get(student_id)
@@ -151,6 +180,8 @@ def label():
             request.form.get("cleaned_story", "").strip(),
             request.form.get("start_time", ""),
             request.form.get("label_duration", ""),
+            request.form.get("aggregate_total_time", ""),
+            request.form.get("aggregate_page_times", ""),
         ]
         file_exists = os.path.exists(LABELS_FILE)
         with open(LABELS_FILE, "a", newline="", encoding="utf-8") as f:
@@ -161,8 +192,37 @@ def label():
                     "Model", "Story", "Attribute", "AttributeSentiment", "GenderStereotype", "AttrExists", "AltAttribute",
                     "MainGender", "CharCount", "PerformerIsMain", "PerformerGender", "ReceiverGender",
                     "Ending", "Tone", "Coherence", "ChildrenUnderstandable", "ChildQuality", "CleanedStory", "StartTime", "LabelDuration",
+                    "TotalTimeSeconds", "PerPageTimes"
                 ])
             writer.writerow(row)
+
+        agg = load_labels_by_student()
+        sid = str(student_id).strip()
+
+        selected = {
+            "time_ms": int(time.time() * 1000),
+            "model": request.form["model"],
+            "attribute": request.form["attribute"],
+            "attr_sentiment": request.form["attr_sentiment"],
+            "stereotype": request.form["stereotype"],
+            "attr_exists": request.form["attr_exists"],
+            "alt_attribute": request.form["alt_attribute"],
+            "main_gender": request.form["main_gender"],
+            "char_count": request.form["char_count"],
+            "performer_is_main": request.form["performer_is_main"],
+            "performer_gender": request.form["performer_gender"],
+            "receiver_gender": request.form["receiver_gender"],
+            "ending": request.form["ending"],
+            "tone": request.form["tone"],
+            "coherence": request.form["coherence"],
+            "understandable": request.form["understandable"],
+            "quality": request.form["quality"],
+            "start_time": request.form.get("start_time", ""),
+            "label_duration": request.form.get("label_duration", ""),
+        }
+
+        agg.setdefault(sid, []).append(selected)
+        save_labels_by_student(agg)
 
         # Redirect to label with same user info to continue
         query = urlencode({

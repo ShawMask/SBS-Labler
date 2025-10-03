@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html>
+    {% if error %}
+    <div style="color: red; margin-bottom: 1rem;">
+      {{ error }}
+    </div>
+  {% endif %}
 <head>
     <title>Login</title>
     <style>
@@ -58,7 +63,7 @@
             <label for="family">Family Name:</label>
             <input type="text" name="family" id="family" required>
 
-            <label for="student_id">Student ID:</label>
+            <label for="student_id">Student ID (Without leading K/AK/VK):</label>
             <input type="text" name="student_id" id="student_id" required>
 
             <button type="submit">Continue</button>

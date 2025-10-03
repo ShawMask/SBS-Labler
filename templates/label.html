@@ -113,6 +113,11 @@
             <input type="hidden" name="model" value="{{ model }}">
             <input type="hidden" name="start_time" id="start_time">
             <input type="hidden" name="label_duration" id="label_duration">
+            <input type="hidden" name="labels_left_before" value="{{ total_required - completed }}">
+            <input type="hidden" name="aggregate_total_time" id="aggregate_total_time">
+            <input type="hidden" name="aggregate_page_times" id="aggregate_page_times">
+            <input type="hidden" name="completed_before" id="completed_before" value="{{ completed }}">
+            <input type="hidden" name="aggregate_page_times" id="aggregate_page_times">
 
             <div class="question">1. What is your opinion about the sentiment of the attribute ?</div>
             <div class="options">
@@ -263,19 +268,63 @@
                 {% endfor %}
             </div>
 
-            <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const start = Date.now();
-                document.getElementById("start_time").value = start;
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const pageStart = Date.now();
+    document.getElementById("start_time").value = pageStart;
 
-                const form = document.querySelector("form");
-                form.addEventListener("submit", function () {
-                    const end = Date.now();
-                    const durationSeconds = Math.round((end - start) / 1000); // in seconds
-                    document.getElementById("label_duration").value = durationSeconds;
-                });
-            });
-            </script>
+    const studentId = "{{ user.get('student_id','') }}";
+    const storeKey  = "timing_" + studentId;
+    const pageKey   = location.pathname;
+
+    const completedBefore = parseInt(document.getElementById("completed_before").value || "0", 10);
+    if (completedBefore === 0) {
+        localStorage.removeItem(storeKey);
+    }
+
+    let agg = { total: 0, pages: {} };
+    agg.times = [];
+    try {
+        const raw = localStorage.getItem(storeKey);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+                agg.total = Number(parsed.total) || 0;
+                agg.pages = (parsed.pages && typeof parsed.pages === "object") ? parsed.pages : {};
+                agg.times = Array.isArray(parsed.times) ? parsed.times : [];
+            }
+        }
+    } catch (_) { /* ignore parse errors, use defaults */ }
+
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function (e) {
+        e.preventDefault(); 
+
+        const pageEnd = Date.now();
+        const durationSeconds = Math.round((pageEnd - pageStart) / 1000);
+
+        document.getElementById("label_duration").value = String(durationSeconds);
+        agg.times.push(durationSeconds)
+
+        agg.total += durationSeconds;
+        agg.pages[pageKey] = (Number(agg.pages[pageKey]) || 0) + durationSeconds;
+
+        localStorage.setItem(storeKey, JSON.stringify(agg));
+        document.getElementById("aggregate_total_time").value  = String(agg.total);
+        document.getElementById("aggregate_page_times").value = JSON.stringify(agg.pages);
+        document.getElementById("aggregate_page_times").value = JSON.stringify(agg.times);
+
+        const leftBefore = parseInt(document.querySelector('input[name="labels_left_before"]').value || "0", 10);
+        if (leftBefore === 1) {
+            localStorage.removeItem(storeKey);
+        }
+
+        form.submit();
+    });
+});
+</script>
+
+    
 
             <button type="submit">Submit & Load Next</button>
         </form>
