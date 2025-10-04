@@ -3,6 +3,9 @@
 <head>
     <title>Story Labeling</title>
     <style>
+        .req-error{color:#c0392b;margin-top:.75rem;}
+        .req-error ul{margin:.5rem 0 0 1.25rem;}
+        .req-alert{color:#e74c3c;margin-left:.4rem;display:none;font-weight:700;}
         body {
             font-family: sans-serif;
             background-color: #f4f6f8;
@@ -29,12 +32,16 @@
             margin-bottom: 1.5rem;
         }
         .attribute-box {
-            background: #f0f0f0;
-            padding: 0.5rem 0.75rem;
-            border-left: 4px solid #3498db;
-            margin-bottom: 1rem;
+            display: inline-block;      
+            background-color: #3498db;  
+            color: white;
+            padding: 0.4rem 0.75rem;
+            border-radius: 20px;         
             font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
         }
+
         .definition {
             font-style: italic;
             color: #666;
@@ -46,9 +53,19 @@
             padding: 0.75rem;
             border-left: 4px solid #3498db;
             margin: 1rem 0;
-            white-space: pre-wrap;
             font-size: 0.9rem;
         }
+
+        .story-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;   
+            color: #2c3e50;         
+        }
+
+        .story-text {
+            white-space: pre-wrap;   
+        }
+
         .question {
             margin: 1rem 0 0.25rem;
             font-weight: 600;
@@ -107,12 +124,16 @@
 <!--            <div class="definition">{{ definition }}</div>-->
         </div>
 
-        <form method="POST">
+        <form method="POST" novalidate>
             <input type="hidden" name="story" value="{{ story }}">
             <input type="hidden" name="attribute" value="{{ attribute }}">
             <input type="hidden" name="model" value="{{ model }}">
             <input type="hidden" name="start_time" id="start_time">
             <input type="hidden" name="label_duration" id="label_duration">
+            <input type="hidden" name="labels_left_before" value="{{ total_required - completed }}">
+            <input type="hidden" name="aggregate_total_time" id="aggregate_total_time">
+            <input type="hidden" name="aggregate_page_times" id="aggregate_page_times">
+            <input type="hidden" name="completed_before" id="completed_before" value="{{ completed }}">
 
             <div class="question">1. What is your opinion about the sentiment of the attribute ?</div>
             <div class="options">
@@ -135,15 +156,16 @@
             </div>
 
             <div class="story-box">
-                <strong>Story:</strong><br>{{ story }}
+                <div class="story-label">Story:</div>
+                <div class="story-text">{{ story }}</div>
             </div>
 
             <div class="question">Cleaned Story (leave empty if story is already clean)</div>
-            <textarea name="cleaned_story" rows="6" style="width: 100%; padding: 0.5rem; font-size: 0.9rem; border-radius: 5px; border: 1px solid #ccc;"></textarea>
-            <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">
+            <div style="font-size: 1rem; color: #666; margin-top: 0.25rem;">
                 If the story contains irrelevant information, titles, or extra text, please copy the main story here. Otherwise, leave this box empty.
             </div>
-
+            <textarea name="cleaned_story" rows="6" style="width: 100%; padding: 0.5rem; font-size: 0.9rem; border-radius: 5px; border: 1px solid #ccc;"></textarea>
+            
             <div class="question">3. Is the attribute present in the story?</div>
             <div class="options">
                 <div class="option"><input type="radio" id="attr_pres1" name="attr_exists" value="1" required><label for="attr_pres1">Not at all</label></div>
@@ -263,21 +285,103 @@
                 {% endfor %}
             </div>
 
-            <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const start = Date.now();
-                document.getElementById("start_time").value = start;
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const pageStart = Date.now();
+    document.getElementById("start_time").value = pageStart;
 
-                const form = document.querySelector("form");
-                form.addEventListener("submit", function () {
-                    const end = Date.now();
-                    const durationSeconds = Math.round((end - start) / 1000); // in seconds
-                    document.getElementById("label_duration").value = durationSeconds;
-                });
-            });
-            </script>
+    const studentId = "{{ user.get('student_id','') }}";
+    const storeKey  = "timing_" + studentId;
+    const pageKey   = location.pathname;
+
+    const completedBefore = parseInt(document.getElementById("completed_before").value || "0", 10);
+    if (completedBefore === 0) {
+        localStorage.removeItem(storeKey);
+    }
+
+    let agg = { total: 0, pages: {} };
+    agg.times = [];
+    try {
+        const raw = localStorage.getItem(storeKey);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") {
+                agg.total = Number(parsed.total) || 0;
+                agg.pages = (parsed.pages && typeof parsed.pages === "object") ? parsed.pages : {};
+                agg.times = Array.isArray(parsed.times) ? parsed.times : [];
+            }
+        }
+    } catch (_) { /* ignore parse errors, use defaults */ }
+
+    const form = document.querySelector("form");
+    form.addEventListener("submit", function (e) {
+        e.preventDefault(); 
+        const errorBox = document.getElementById("form_error");
+errorBox.style.display = "none";
+errorBox.innerHTML = "";
+
+let missing = [];
+
+document.querySelectorAll(".question").forEach(q => {
+  const options = q.nextElementSibling && q.nextElementSibling.classList.contains("options")
+    ? q.nextElementSibling : null;
+  if (!options) return;
+
+  const requiredRadios = options.querySelectorAll('input[type="radio"][required]');
+  if (requiredRadios.length === 0) return; 
+
+  const checked = options.querySelector('input[type="radio"]:checked');
+
+  let alert = q.querySelector(".req-alert");
+  if (!alert) {
+    alert = document.createElement("span");
+    alert.className = "req-alert";
+    alert.textContent = " !";
+    q.appendChild(alert);
+  }
+  alert.style.display = checked ? "none" : "inline";
+
+  if (!checked) {
+    missing.push(q.textContent.replace(/\s+!/,'').trim());
+  }
+});
+
+if (missing.length > 0) {
+  const list = missing.map(m => `<li>${m}</li>`).join("");
+  errorBox.innerHTML = `Please finish all labelling before moving to the next.<br><strong>You have not done:</strong><ul>${list}</ul>`;
+  errorBox.style.display = "block";
+  errorBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  return; 
+}
+
+        const pageEnd = Date.now();
+        const durationSeconds = Math.round((pageEnd - pageStart) / 1000);
+
+        document.getElementById("label_duration").value = String(durationSeconds);
+        agg.times.push(durationSeconds)
+
+        agg.total += durationSeconds;
+        agg.pages[pageKey] = (Number(agg.pages[pageKey]) || 0) + durationSeconds;
+
+        localStorage.setItem(storeKey, JSON.stringify(agg));
+        document.getElementById("aggregate_total_time").value  = String(agg.total);
+        document.getElementById("aggregate_page_times").value = JSON.stringify(agg.pages);
+        document.getElementById("aggregate_page_times").value = JSON.stringify(agg.times);
+
+        const leftBefore = parseInt(document.querySelector('input[name="labels_left_before"]').value || "0", 10);
+        if (leftBefore === 1) {
+            localStorage.removeItem(storeKey);
+        }
+
+        form.submit();
+    });
+});
+</script>
+
+    
 
             <button type="submit">Submit & Load Next</button>
+            <div id="form_error" class="req-error" style="display:none;"></div>
         </form>
     </div>
 
