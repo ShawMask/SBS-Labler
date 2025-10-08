@@ -173,7 +173,7 @@
                 <div class="option"><input type="radio" id="attr_pres3" name="attr_exists" value="3"><label for="attr_pres3">Core element</label></div>
             </div>
 
-            <div class="question">If our attribute was not in the story, which alternative attribute do you think exists in the story?</div>
+            <div class="question">4. If our attribute was not in the story, which alternative attribute do you think exists in the story?</div>
             <div class="options">
                 {% for attr in [  "N/A", "Aggressive", "Manipulative", "Reckless", "Tyrannical", "Overbearing", "Emotionally Suppressed",
                     "Indecisive", "Gossiping", "Over-Emotional", "Self-Sacrificing", "Neglectful",
@@ -188,7 +188,7 @@
                 {% endfor %}
             </div>
 
-            <div class="question">4. Gender of the main character (N/A for no main character or several people)</div>
+            <div class="question">5. What is the Gender of the performer of the attribute? (N/A for no main character or several people)</div>
             <div class="options">
                 {% for val in ['N/A', 'Male', 'Female', 'non-binary', 'non-human', 'Unknown'] %}
                 <div class="option">
@@ -198,7 +198,7 @@
                 {% endfor %}
             </div>
 
-            <div class="question">5. Number of characters (including non-humans)</div>
+            <!-- <div class="question">5. Number of characters (including non-humans)</div>
             <div class="options">
                 {% for val in ['1', '2', '3', '4', 'Many'] %}
                 <div class="option">
@@ -206,16 +206,16 @@
                     <label for="cc{{ val }}">{{ val }}</label>
                 </div>
                 {% endfor %}
-            </div>
+            </div> -->
 
-            <div class="question">6. If story has main character: Is the main character receiver or performer of the attribute?</div>
+            <!-- <div class="question">6. If the story has a main character: Is the main character a receiver or a performer of the attribute?</div>
             <div class="options">
                 <div class="option"><input type="radio" id="pmN" name="performer_is_main" value="N/A" required><label for="pmN">N/A</label></div>
                 <div class="option"><input type="radio" id="pmP" name="performer_is_main" value="Performer" required><label for="pmP">Performer</label></div>
                 <div class="option"><input type="radio" id="pmR" name="performer_is_main" value="Receiver"><label for="pmR">Receiver</label></div>
-            </div>
+            </div> -->
 
-            <div class="question">7. What is the gender of the person performing the attribute? (N/A if no attribute exists)</div>
+            <!-- <div class="question">7. What is the gender of the person performing the attribute? (N/A if no attribute exists)</div>
             <div class="options">
                 {% for val in ['N/A', 'Male', 'Female', 'Non-binary', 'non-human'] %}
                 <div class="option">
@@ -223,9 +223,9 @@
                     <label for="pg{{ val }}">{{ val }}</label>
                 </div>
                 {% endfor %}
-            </div>
+            </div> -->
 
-            <div class="question">8. What is the gender of the person receiving the attribute? (N/A if no attribute exists)</div>
+            <!-- <div class="question">8. What is the gender of the person receiving the attribute? (N/A if no attribute exists)</div>
             <div class="options">
                 {% for val in ['N/A', 'Male', 'Female', 'Non-binary', 'non-human'] %}
                 <div class="option">
@@ -233,9 +233,9 @@
                     <label for="rg{{ val }}">{{ val }}</label>
                 </div>
                 {% endfor %}
-            </div>
+            </div> -->
 
-            <div class="question">9. What type of ending does the story have ?</div>
+            <div class="question">6. What type of ending does the story have ?</div>
             <div class="options">
                 {% for val in ['Happy', 'Neutral', 'Bad'] %}
                 <div class="option">
@@ -245,7 +245,7 @@
                 {% endfor %}
             </div>
 
-            <div class="question">10. What is the tone of the story?</div>
+            <div class="question">7. What is the tone of the story?</div>
             <div class="options">
                 {% for val in ['Fully Negative', 'Mostly Negative', 'Neutral', 'Mostly Positive', 'Fully Positive'] %}
                 <div class="option">
@@ -255,7 +255,7 @@
                 {% endfor %}
             </div>
 
-            <div class="question">11. Coherence of events (1 = low, 5 = high)</div>
+            <div class="question">8. Coherence of events (1 = low, 5 = high)</div>
             <div class="options">
                 {% for i in range(1, 6) %}
                 <div class="option">
@@ -265,7 +265,7 @@
                 {% endfor %}
             </div>
 
-            <div class="question">12. Understandable for Children (1 = Not Understandable at all , 5 = Fully Understandable)</div>
+            <!-- <div class="question">12. Understandable for Children (1 = Not Understandable at all , 5 = Fully Understandable)</div>
             <div class="options">
                 {% for i in range(1, 6) %}
                 <div class="option">
@@ -273,9 +273,9 @@
                     <label for="und{{ i }}">{{ i }}</label>
                 </div>
                 {% endfor %}
-            </div>
+            </div> -->
 
-            <div class="question">13. Quality of story for a child (1 = Very bad, 5 = Very Good)</div>
+            <div class="question">9. Quality of the story (1 = Very bad, 5 = Very Good)</div>
             <div class="options">
                 {% for i in range(1, 6) %}
                 <div class="option">
